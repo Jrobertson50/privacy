@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokemon Go Team Builder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      color: #8b949e;
+      margin-top: 4px;
+      font-size: 0.9rem;
+    }
+
+    /* League tabs */
+    .league-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .league-tab {
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: 1.5px solid #30363d;
+      background: transparent;
+      color: #8b949e;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .league-tab:hover { border-color: #58a6ff; color: #58a6ff; }
+    .league-tab.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+    .league-tab .cp-badge {
+      font-size: 0.75rem;
+      font-weight: 400;
+      opacity: 0.8;
+      margin-left: 4px;
+    }
+
+    /* Team slots */
+    .team-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .slot {
+      background: #161b22;
+      border: 1.5px solid #30363d;
+      border-radius: 12px;
+      padding: 16px;
+      width: 200px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: border-color 0.15s;
+    }
+    .slot.filled { border-color: #30363d; }
+    .slot.empty { border-style: dashed; }
+
+    .slot-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #8b949e;
+      margin-bottom: 10px;
+      align-self: flex-start;
+    }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .search-input {
+      width: 100%;
+      background: #0d1117;
+      border: 1.5px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      padding: 7px 10px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: #58a6ff; }
+    .search-input::placeholder { color: #484f58; }
+
+    .autocomplete {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #1c2128;
+      border: 1.5px solid #30363d;
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .autocomplete.open { display: block; }
+    .autocomplete-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: capitalize;
+    }
+    .autocomplete-item:hover { background: #30363d; }
+    .autocomplete-item img {
+      width: 28px;
+      height: 28px;
+      image-rendering: pixelated;
+    }
+
+    /* Pokemon display */
+    .poke-display {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .poke-sprite {
+      width: 80px;
+      height: 80px;
+      image-rendering: pixelated;
+    }
+    .poke-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-transform: capitalize;
+      text-align: center;
+    }
+    .type-badges {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .type-badge {
+      padding: 2px 9px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      color: #fff;
+      letter-spacing: 0.3px;
+    }
+
+    .clear-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #30363d;
+      border: none;
+      color: #8b949e;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .clear-btn:hover { background: #484f58; color: #e6edf3; }
+
+    /* Empty slot placeholder */
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #21262d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+    .empty-text { color: #484f58; font-size: 0.82rem; text-align: center; }
+
+    /* Analysis */
+    .analysis {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .analysis-card {
+      background: #161b22;
+      border: 1.5px solid #30363d;
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .analysis-card h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+      color: #8b949e;
+      margin-bottom: 12px;
+    }
+
+    .type-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .analysis-placeholder {
+      color: #484f58;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    /* Danger level coloring on type badges in analysis */
+    .threat-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .threat-badge .count-dot {
+      margin-left: 4px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 0 5px;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      color: #8b949e;
+      font-size: 0.85rem;
+      padding: 20px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+    @media (max-width: 500px) {
+      .team-row { flex-direction: column; align-items: center; }
+      .slot { width: 100%; max-width: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#9889; Go Team Builder</h1>
+  <p>Build your Pokemon Go PvP team and check your coverage</p>
+</header>
+
+<div class="league-tabs">
+  <button class="league-tab active" data-league="great">Great <span class="cp-badge">1500 CP</span></button>
+  <button class="league-tab" data-league="ultra">Ultra <span class="cp-badge">2500 CP</span></button>
+  <button class="league-tab" data-league="master">Master <span class="cp-badge">No limit</span></button>
+</div>
+
+<div class="team-row" id="teamRow">
+  <!-- slots injected by JS -->
+</div>
+
+<div class="analysis" id="analysis">
+  <div class="loading">Add Pokemon to see team analysis</div>
+</div>
+
+<script>
+// ─── Type colours ──────────────────────────────────────────────────────────
+const TYPE_COLORS = {
+  normal:'#9399a1', fire:'#ff9c54', water:'#4d90d5', electric:'#f3d23b',
+  grass:'#63bb5b', ice:'#74cec0', fighting:'#ce4069', poison:'#ab6ac8',
+  ground:'#d97746', flying:'#89aae3', psychic:'#f97176', bug:'#90c12c',
+  rock:'#c7b78b', ghost:'#5269ac', dragon:'#0a6dc4', dark:'#5a5366',
+  steel:'#5a8ea1', fairy:'#ec8fe6',
+};
+
+// ─── Type effectiveness (attacking_type → defending_types hit 2×) ───────────
+const SUPER_EFFECTIVE = {
+  normal: [],
+  fire: ['grass','ice','bug','steel'],
+  water: ['fire','ground','rock'],
+  electric: ['water','flying'],
+  grass: ['water','ground','rock'],
+  ice: ['grass','ground','flying','dragon'],
+  fighting: ['normal','ice','rock','dark','steel'],
+  poison: ['grass','fairy'],
+  ground: ['fire','electric','poison','rock','steel'],
+  flying: ['grass','fighting','bug'],
+  psychic: ['fighting','poison'],
+  bug: ['grass','psychic','dark'],
+  rock: ['fire','ice','flying','bug'],
+  ghost: ['psychic','ghost'],
+  dragon: ['dragon'],
+  dark: ['psychic','ghost'],
+  steel: ['ice','rock','fairy'],
+  fairy: ['fighting','dragon','dark'],
+};
+
+// Defending side: type → what's super effective against it
+const WEAK_TO = {};
+for (const [atk, defs] of Object.entries(SUPER_EFFECTIVE)) {
+  for (const def of defs) {
+    if (!WEAK_TO[def]) WEAK_TO[def] = [];
+    WEAK_TO[def].push(atk);
+  }
+}
+
+// Type immunities (defending type → immune to these attacks)
+const IMMUNE_TO = {
+  normal: ['ghost'],
+  ghost: ['normal','fighting'],
+  ground: ['electric'],
+  flying: ['ground'],
+  dark: ['psychic'],
+  steel: ['poison'],
+  fairy: ['dragon'],
+};
+
+// ─── State ─────────────────────────────────────────────────────────────────
+const team = [null, null, null]; // {name, sprite, types[]}
+let allPokemon = []; // [{name, url}]
+let activeLeague = 'great';
+
+// ─── Boot ──────────────────────────────────────────────────────────────────
+async function init() {
+  renderSlots();
+  renderAnalysis();
+  await loadPokemonList();
+}
+
+async function loadPokemonList() {
+  try {
+    const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
+    const data = await res.json();
+    allPokemon = data.results;
+  } catch(e) {
+    console.error('Failed to load pokemon list', e);
+  }
+}
+
+// ─── Slots ─────────────────────────────────────────────────────────────────
+function renderSlots() {
+  const row = document.getElementById('teamRow');
+  row.innerHTML = '';
+  const labels = ['Pokemon 1', 'Pokemon 2', 'Pokemon 3'];
+  for (let i = 0; i < 3; i++) {
+    row.appendChild(makeSlot(i, labels[i]));
+  }
+}
+
+function makeSlot(idx, label) {
+  const slot = document.createElement('div');
+  slot.className = 'slot ' + (team[idx] ? 'filled' : 'empty');
+  slot.id = `slot-${idx}`;
+
+  const lbl = document.createElement('div');
+  lbl.className = 'slot-label';
+  lbl.textContent = label;
+  slot.appendChild(lbl);
+
+  if (team[idx]) {
+    // Clear button
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'clear-btn';
+    clearBtn.innerHTML = '&#x2715;';
+    clearBtn.title = 'Remove';
+    clearBtn.onclick = () => { team[idx] = null; refreshUI(); };
+    slot.appendChild(clearBtn);
+
+    // Pokemon display
+    const display = document.createElement('div');
+    display.className = 'poke-display';
+
+    const img = document.createElement('img');
+    img.className = 'poke-sprite';
+    img.src = team[idx].sprite;
+    img.alt = team[idx].name;
+    display.appendChild(img);
+
+    const name = document.createElement('div');
+    name.className = 'poke-name';
+    name.textContent = team[idx].name;
+    display.appendChild(name);
+
+    const badges = document.createElement('div');
+    badges.className = 'type-badges';
+    for (const t of team[idx].types) {
+      badges.appendChild(makeTypeBadge(t));
+    }
+    display.appendChild(badges);
+
+    slot.appendChild(display);
+  } else {
+    // Search
+    const wrap = document.createElement('div');
+    wrap.className = 'search-wrap';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'search-input';
+    input.placeholder = 'Search Pokemon...';
+    input.autocomplete = 'off';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'autocomplete';
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      if (q.length < 2) { dropdown.classList.remove('open'); return; }
+      const matches = allPokemon.filter(p => p.name.includes(q)).slice(0, 30);
+      dropdown.innerHTML = '';
+      if (!matches.length) { dropdown.classList.remove('open'); return; }
+      for (const p of matches) {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.textContent = p.name;
+        item.addEventListener('mousedown', async (e) => {
+          e.preventDefault();
+          dropdown.classList.remove('open');
+          input.value = '';
+          await selectPokemon(idx, p.name);
+        });
+        dropdown.appendChild(item);
+      }
+      dropdown.classList.add('open');
+    });
+
+    input.addEventListener('blur', () => setTimeout(() => dropdown.classList.remove('open'), 150));
+
+    wrap.appendChild(input);
+    wrap.appendChild(dropdown);
+
+    const placeholder = document.createElement('div');
+    placeholder.className = 'poke-display';
+    placeholder.innerHTML = `
+      <div class="empty-icon">?</div>
+      <div class="empty-text">Search for a Pokemon above</div>
+    `;
+
+    slot.appendChild(wrap);
+    slot.appendChild(placeholder);
+  }
+
+  return slot;
+}
+
+function makeTypeBadge(type, extraClass) {
+  const el = document.createElement('span');
+  el.className = 'type-badge' + (extraClass ? ' ' + extraClass : '');
+  el.textContent = type;
+  el.style.background = TYPE_COLORS[type] || '#666';
+  return el;
+}
+
+// ─── Select Pokemon ─────────────────────────────────────────────────────────
+async function selectPokemon(idx, name) {
+  try {
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
+    const data = await res.json();
+    const sprite = data.sprites.front_default || data.sprites.other['official-artwork'].front_default;
+    const types = data.types.map(t => t.type.name);
+    team[idx] = { name, sprite, types };
+    refreshUI();
+  } catch(e) {
+    console.error('Failed to load pokemon', e);
+  }
+}
+
+// ─── Refresh ────────────────────────────────────────────────────────────────
+function refreshUI() {
+  renderSlots();
+  renderAnalysis();
+}
+
+// ─── Analysis ───────────────────────────────────────────────────────────────
+function renderAnalysis() {
+  const el = document.getElementById('analysis');
+  const filled = team.filter(Boolean);
+
+  if (!filled.length) {
+    el.innerHTML = '<div class="loading">Add Pokemon to see team analysis</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+
+  el.appendChild(makeCoverageCard(filled));
+  el.appendChild(makeWeaknessCard(filled));
+  if (filled.length === 3) el.appendChild(makeSummaryCard(filled));
+}
+
+function makeCoverageCard(filled) {
+  const card = document.createElement('div');
+  card.className = 'analysis-card';
+  card.innerHTML = '<h3>&#9889; Offensive Coverage</h3>';
+
+  // Collect all types covered super-effectively
+  const covered = new Set();
+  for (const p of filled) {
+    for (const t of p.types) {
+      for (const se of (SUPER_EFFECTIVE[t] || [])) covered.add(se);
+    }
+  }
+
+  if (!covered.size) {
+    card.innerHTML += '<div class="analysis-placeholder">No super-effective coverage calculated</div>';
+    return card;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'type-grid';
+  const allTypes = Object.keys(TYPE_COLORS);
+  for (const t of allTypes) {
+    if (covered.has(t)) grid.appendChild(makeTypeBadge(t));
+  }
+  card.appendChild(grid);
+
+  const missing = allTypes.filter(t => !covered.has(t));
+  if (missing.length) {
+    const note = document.createElement('div');
+    note.style.cssText = 'margin-top:12px;font-size:0.78rem;color:#8b949e;';
+    note.innerHTML = `<strong style="color:#6e7681">No coverage vs:</strong> ` +
+      missing.map(t => `<span class="type-badge" style="background:${TYPE_COLORS[t]};opacity:0.45">${t}</span>`).join(' ');
+    card.appendChild(note);
+  }
+
+  return card;
+}
+
+function makeWeaknessCard(filled) {
+  const card = document.createElement('div');
+  card.className = 'analysis-card';
+  card.innerHTML = '<h3>&#128293; Team Weaknesses</h3>';
+
+  // Count how many Pokemon on team are weak to each type
+  const weakCounts = {};
+  for (const p of filled) {
+    const teamWeakTypes = getWeaknesses(p.types);
+    for (const t of teamWeakTypes) {
+      weakCounts[t] = (weakCounts[t] || 0) + 1;
+    }
+  }
+
+  const sorted = Object.entries(weakCounts).sort((a,b) => b[1]-a[1]);
+
+  if (!sorted.length) {
+    card.innerHTML += '<div class="analysis-placeholder">No weaknesses detected</div>';
+    return card;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'type-grid';
+
+  for (const [type, count] of sorted) {
+    const wrap = document.createElement('span');
+    wrap.className = 'threat-badge';
+
+    const badge = makeTypeBadge(type);
+    // Dim if only 1 Pokemon weak, bold/bright if 2+
+    if (count === 1) badge.style.opacity = '0.65';
+
+    const dot = document.createElement('span');
+    dot.className = 'count-dot';
+    dot.style.cssText = `background:${TYPE_COLORS[type]};color:#fff;margin-left:4px;padding:1px 5px;border-radius:8px;font-size:0.68rem;font-weight:700;`;
+    dot.textContent = `${count}/${filled.length}`;
+
+    wrap.appendChild(badge);
+    wrap.appendChild(dot);
+    grid.appendChild(wrap);
+  }
+
+  card.appendChild(grid);
+  return card;
+}
+
+function makeSummaryCard(filled) {
+  const card = document.createElement('div');
+  card.className = 'analysis-card';
+  card.innerHTML = '<h3>&#128202; Team Summary</h3>';
+
+  const allTypes = Object.keys(TYPE_COLORS);
+
+  // Unique type count
+  const teamTypes = new Set(filled.flatMap(p => p.types));
+
+  // Coverage score: % of types hit super-effectively
+  const covered = new Set();
+  for (const p of filled) {
+    for (const t of p.types) {
+      for (const se of (SUPER_EFFECTIVE[t] || [])) covered.add(se);
+    }
+  }
+  const coveragePct = Math.round((covered.size / allTypes.length) * 100);
+
+  // Danger: types all 3 Pokemon are weak to
+  const teamWeak = allTypes.filter(t => {
+    return filled.every(p => getWeaknesses(p.types).has(t));
+  });
+
+  const leagueInfo = {
+    great: 'Great League (max 1500 CP)',
+    ultra: 'Ultra League (max 2500 CP)',
+    master: 'Master League (no CP limit)',
+  };
+
+  const rows = [
+    ['League', leagueInfo[activeLeague]],
+    ['Type diversity', [...teamTypes].map(t =>
+      `<span class="type-badge" style="background:${TYPE_COLORS[t]}">${t}</span>`
+    ).join(' ')],
+    ['Offensive coverage', `${covered.size}/${allTypes.length} types (${coveragePct}%)`],
+    ['Shared weaknesses', teamWeak.length
+      ? teamWeak.map(t => `<span class="type-badge" style="background:${TYPE_COLORS[t]}">${t}</span>`).join(' ')
+      : '<span style="color:#3fb950">None ✓</span>'],
+  ];
+
+  const table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.85rem;';
+  for (const [label, value] of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:#8b949e;padding:5px 0;white-space:nowrap;width:40%;vertical-align:top">${label}</td>
+      <td style="padding:5px 0 5px 12px;vertical-align:top">${value}</td>
+    `;
+    table.appendChild(tr);
+  }
+  card.appendChild(table);
+
+  // Verdict
+  const verdict = document.createElement('div');
+  verdict.style.cssText = 'margin-top:14px;padding:10px 14px;border-radius:8px;font-size:0.85rem;line-height:1.5;';
+
+  let msg, bg;
+  if (teamWeak.length >= 2 && coveragePct < 50) {
+    msg = `&#9888; This team has shared weaknesses and limited coverage. Consider replacing a Pokemon that covers ${teamWeak.slice(0,2).join(' or ')}.`;
+    bg = 'rgba(248,81,73,0.12)';
+  } else if (teamWeak.length >= 1) {
+    msg = `&#8505;&#65039; Solid team but watch out for ${teamWeak.join(', ')}-type attacks — all 3 of your Pokemon are vulnerable.`;
+    bg = 'rgba(227,179,65,0.12)';
+  } else if (coveragePct >= 70) {
+    msg = `&#9989; Strong team! Great type coverage with no shared weaknesses across all 3 slots.`;
+    bg = 'rgba(63,185,80,0.12)';
+  } else {
+    msg = `&#128077; Good team! No shared weaknesses. You could improve offensive coverage further.`;
+    bg = 'rgba(63,185,80,0.08)';
+  }
+
+  verdict.style.background = bg;
+  verdict.innerHTML = msg;
+  card.appendChild(verdict);
+
+  return card;
+}
+
+// Returns a Set of types that are super-effective against the given type array
+function getWeaknesses(types) {
+  const weak = new Set();
+  const immune = new Set();
+
+  for (const t of types) {
+    for (const w of (WEAK_TO[t] || [])) weak.add(w);
+    for (const i of (IMMUNE_TO[t] || [])) immune.add(i);
+  }
+  // Remove immunities
+  for (const i of immune) weak.delete(i);
+  return weak;
+}
+
+// ─── League tabs ────────────────────────────────────────────────────────────
+document.querySelectorAll('.league-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.league-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeLeague = btn.dataset.league;
+    renderAnalysis();
+  });
+});
+
+init();
+</script>
+</body>
+</html>
